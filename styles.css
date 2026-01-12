@@ -1,0 +1,29 @@
+html, body {
+  height: 100%;
+  margin: 0;
+}
+#app {
+  position: fixed;
+  inset: 0;
+  background: #0e0e10;
+}
+#hud {
+  position: fixed;
+  top: 12px;
+  left: 12px;
+  color: #e8e8ea;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+  font-size: 13px;
+  line-height: 1.35;
+  background: rgba(0,0,0,0.35);
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 8px;
+  padding: 10px 12px;
+  pointer-events: none;
+}
+#hud #hint {
+  margin-top: 6px;
+  opacity: 0.8;
+}
+
