@@ -48,10 +48,12 @@ async function initGoWasm() {
 initGoWasm()
 
 function updateHUD(count, metrics) {
-  const w = state.box.width
-  const h = state.box.height
-  const d = state.box.depth
-  boxDimsEl.textContent = `Box: ${w} in × ${h} in × ${d} in`
+  const factor = state.units === 'metric' ? 2.54 : 1
+  const unitLabel = state.units === 'metric' ? 'cm' : 'in'
+  const w = state.box.width * factor
+  const h = state.box.height * factor
+  const d = state.box.depth * factor
+  boxDimsEl.textContent = `Box: ${w} ${unitLabel} × ${h} ${unitLabel} × ${d} ${unitLabel}`
   const frac = metrics ? metrics.fraction : 0
   const theo = metrics ? metrics.theoreticalMax : 0
   ballInfoEl.textContent = `Balls: ${count}  |  Packing fraction: ${(frac * 100).toFixed(2)}% (max ~ ${(theo * 100).toFixed(2)}%)`

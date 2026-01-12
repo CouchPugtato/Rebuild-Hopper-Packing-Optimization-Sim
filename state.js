@@ -3,5 +3,6 @@ export const state = {
   ballDiameter: 5.91,
   ballsGroup: null,
   optimizeOffsets: true,
-  ballsCount: 0
+  ballsCount: 0,
+  units: 'imperial'
 }
