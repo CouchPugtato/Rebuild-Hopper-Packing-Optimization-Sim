@@ -12,6 +12,8 @@ const { scene, camera, renderer, controls, THREE } = createScene(app)
 
 let boxMesh = null
 let boxEdges = null
+let currentPackId = 0
+let activeWorkers = []
 async function fileExists(url) {
   try {
     const res = await fetch(url, { method: 'HEAD' })
@@ -75,7 +77,10 @@ function packBalls() {
   const overlay = document.getElementById('loading')
   overlay.style.display = 'block'
   setTimeout(() => {
-    if (state.ballsGroup) scene.remove(state.ballsGroup)
+    const myId = ++currentPackId
+    for (const w of activeWorkers) try { w.terminate() } catch {}
+    activeWorkers = []
+    removeCurrentGroup()
     const r = state.ballDiameter / 2
     const goPack = typeof window !== 'undefined' && window.pack_fcc_best_go
     let arr
@@ -110,8 +115,13 @@ function packBalls() {
         const end = Math.min(offsets.length, start + chunkSize)
         const list = offsets.slice(start, end)
         const worker = new Worker('./pack-worker.js')
+        activeWorkers.push(worker)
         worker.onmessage = e => {
           const { bestIdx, bestCount } = e.data
+          if (myId !== currentPackId) {
+            try { worker.terminate() } catch {}
+            return
+          }
           console.log('Worker result', { worker: w, localBestIdx: bestIdx, localBestCount: bestCount })
           if (bestCount > globalBest.count) {
             globalBest = { idx: start + bestIdx, count: bestCount }
@@ -124,7 +134,7 @@ function packBalls() {
             }
             const bestOff = globalBest.idx !== -1 ? offsets[globalBest.idx] : { ox: 0, oy: 0, oz: 0 }
             arr = packFCCArray(state.box, r, bestOff)
-            finalize(arr, r)
+            finalize(arr, r, myId)
           }
         }
         worker.postMessage({ dims: state.box, r, offsetsList: list })
@@ -134,10 +144,11 @@ function packBalls() {
       console.log('Optimize offsets disabled; using zero offset')
       arr = packFCCArray(state.box, r, { ox: 0, oy: 0, oz: 0 })
     }
-    finalize(arr, r)
+    finalize(arr, r, myId)
   }, 0)
 
-  function finalize(arr, r) {
+  function finalize(arr, r, myId) {
+    if (myId !== currentPackId) return
     const count = arr.length / 3
     if (!count) {
       console.warn('No positions generated')
@@ -166,6 +177,16 @@ function packBalls() {
   }
 }
 
+function removeCurrentGroup() {
+  if (!state.ballsGroup) return
+  try {
+    scene.remove(state.ballsGroup)
+    if (state.ballsGroup.geometry) state.ballsGroup.geometry.dispose()
+    if (state.ballsGroup.material) state.ballsGroup.material.dispose()
+  } catch {}
+  state.ballsGroup = null
+  state.ballsCount = 0
+}
 setupUI(state, handleBoundaryChange)
 rebuildBox()
 packBalls()
