@@ -27,12 +27,12 @@ export function setupUI(state, onBoxChange) {
     state.box.width = v / factor
     onBoxChange()
   })
-  boxFolder.add(boxUI, 'height', 1 * factor, 30 * factor, 1 * factor).name('Height').onChange(v => {
-    state.box.height = v / factor
-    onBoxChange()
-  })
   boxFolder.add(boxUI, 'depth', 1 * factor, 30 * factor, 1 * factor).name('Depth').onChange(v => {
     state.box.depth = v / factor
+    onBoxChange()
+  })
+  boxFolder.add(boxUI, 'height', 1 * factor, 30 * factor, 1 * factor).name('Height').onChange(v => {
+    state.box.height = v / factor
     onBoxChange()
   })
   boxFolder.open()
