@@ -13,7 +13,7 @@ export function setupUI(state, onBoxChange) {
   unitsFolder.open()
   const slopeFolder = gui.addFolder('Slope')
   slopeFolder.add(state, 'slopeAxis', ['x', 'z']).name('Axis').onChange(onBoxChange)
-  slopeFolder.add(state, 'slopeAngleDeg', 0, 30, 1).name('Angle (deg)').onChange(onBoxChange)
+  slopeFolder.add(state, 'slopeAngleDeg', 0, 30, 0.01).name('Angle (deg)').onChange(onBoxChange)
   slopeFolder.open()
   const factor = state.units === 'metric' ? 2.54 : 1
   const unitLabel = state.units === 'metric' ? 'cm' : 'in'
@@ -23,22 +23,22 @@ export function setupUI(state, onBoxChange) {
     height: state.box.height * factor,
     depth: state.box.depth * factor
   }
-  boxFolder.add(boxUI, 'width', 1 * factor, 30 * factor, 1 * factor).name('Width').onChange(v => {
+  boxFolder.add(boxUI, 'width', 1 * factor, 30 * factor, 0.01 * factor).name('Width').onChange(v => {
     state.box.width = v / factor
     onBoxChange()
   })
-  boxFolder.add(boxUI, 'depth', 1 * factor, 30 * factor, 1 * factor).name('Depth').onChange(v => {
+  boxFolder.add(boxUI, 'depth', 1 * factor, 30 * factor, 0.01 * factor).name('Depth').onChange(v => {
     state.box.depth = v / factor
     onBoxChange()
   })
-  boxFolder.add(boxUI, 'height', 1 * factor, 30 * factor, 1 * factor).name('Height').onChange(v => {
+  boxFolder.add(boxUI, 'height', 1 * factor, 30 * factor, 0.01 * factor).name('Height').onChange(v => {
     state.box.height = v / factor
     onBoxChange()
   })
   boxFolder.open()
   const ballsFolder = gui.addFolder('Balls')
   const ballsUI = { diameter: state.ballDiameter * factor }
-  ballsFolder.add(ballsUI, 'diameter', 5 * factor, 7 * factor, 0.5 * factor).name(`Diameter (${unitLabel})`).onChange(v => {
+  ballsFolder.add(ballsUI, 'diameter', 5 * factor, 7 * factor, 0.01 * factor).name(`Diameter (${unitLabel})`).onChange(v => {
     state.ballDiameter = v / factor
     onBoxChange()
   })
