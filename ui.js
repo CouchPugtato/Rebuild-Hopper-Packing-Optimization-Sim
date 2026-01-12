@@ -34,7 +34,7 @@ export function setupUI(state, onBoxChange) {
   boxFolder.open()
   const ballsFolder = gui.addFolder('Balls')
   const ballsUI = { diameter: state.ballDiameter * factor }
-  ballsFolder.add(ballsUI, 'diameter', 2 * factor, 48 * factor, 0.5 * factor).name(`Diameter (${unitLabel})`).onChange(v => {
+  ballsFolder.add(ballsUI, 'diameter', 5 * factor, 7 * factor, 0.5 * factor).name(`Diameter (${unitLabel})`).onChange(v => {
     state.ballDiameter = v / factor
     onBoxChange()
   })
