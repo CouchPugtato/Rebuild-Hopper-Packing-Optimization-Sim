@@ -66,6 +66,11 @@ function rebuildBox() {
   updateHUD(count, metrics)
 }
 
+function handleBoundaryChange() {
+  rebuildBox()
+  packBalls()
+}
+
 function packBalls() {
   const overlay = document.getElementById('loading')
   overlay.style.display = 'block'
@@ -161,8 +166,9 @@ function packBalls() {
   }
 }
 
-setupUI(state, rebuildBox, packBalls)
+setupUI(state, handleBoundaryChange)
 rebuildBox()
+packBalls()
 
 function onResize() {
   camera.aspect = window.innerWidth / window.innerHeight
