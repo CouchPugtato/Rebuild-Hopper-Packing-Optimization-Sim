@@ -119,6 +119,98 @@ export function packFCCArray(dims, r, offsets = { ox: 0, oy: 0, oz: 0 }) {
   }
   return arr
 }
+
+function slopeParams(dims, r, slope) {
+  const angle = (slope && slope.slopeAngleDeg) ? slope.slopeAngleDeg : 0
+  const axis = (slope && slope.slopeAxis) ? slope.slopeAxis : 'x'
+  const tan = Math.tan((angle * Math.PI) / 180)
+  const minAxis = axis === 'x' ? -dims.width / 2 : -dims.depth / 2
+  const span = axis === 'x' ? dims.width : dims.depth
+  const maxRise = tan * span
+  return { tan, axis, minAxis, maxRise }
+}
+
+export function countFCCSlope(dims, r, offsets = { ox: 0, oy: 0, oz: 0 }, slope) {
+  const a = 2 * Math.SQRT2 * r
+  const W = dims.width
+  const H = dims.height
+  const D = dims.depth
+  const minX = -W / 2 + r
+  const maxX = W / 2 - r
+  const maxY = H - r
+  const minZ = -D / 2 + r
+  const maxZ = D / 2 - r
+  const { tan, axis, minAxis } = slopeParams(dims, r, slope)
+  let count = 0
+  const bases = [
+    [0, 0, 0],
+    [0, a / 2, a / 2],
+    [a / 2, 0, a / 2],
+    [a / 2, a / 2, 0]
+  ]
+  for (const b of bases) {
+    const iMin = Math.ceil((minX - (offsets.ox + b[0])) / a)
+    const iMax = Math.floor((maxX - (offsets.ox + b[0])) / a)
+    const kMin = Math.ceil((minZ - (offsets.oz + b[2])) / a)
+    const kMax = Math.floor((maxZ - (offsets.oz + b[2])) / a)
+    for (let i = iMin; i <= iMax; i++) {
+      for (let k = kMin; k <= kMax; k++) {
+        const x = offsets.ox + i * a + b[0]
+        const z = offsets.oz + k * a + b[2]
+        const axisCoord = axis === 'x' ? x : z
+        const minYLocal = r + tan * (axisCoord - minAxis)
+        const jMin = Math.ceil((minYLocal - (offsets.oy + b[1])) / a)
+        const jMax = Math.floor((maxY - (offsets.oy + b[1])) / a)
+        if (jMax >= jMin) count += (jMax - jMin + 1)
+      }
+    }
+  }
+  return count
+}
+
+export function packFCCArraySlope(dims, r, offsets = { ox: 0, oy: 0, oz: 0 }, slope) {
+  const a = 2 * Math.SQRT2 * r
+  const W = dims.width
+  const H = dims.height
+  const D = dims.depth
+  const minX = -W / 2 + r
+  const maxX = W / 2 - r
+  const maxY = H - r
+  const minZ = -D / 2 + r
+  const maxZ = D / 2 - r
+  const bases = [
+    [0, 0, 0],
+    [0, a / 2, a / 2],
+    [a / 2, 0, a / 2],
+    [a / 2, a / 2, 0]
+  ]
+  const { tan, axis, minAxis } = slopeParams(dims, r, slope)
+  const total = countFCCSlope(dims, r, offsets, slope)
+  const arr = new Float32Array(total * 3)
+  let idx = 0
+  for (const b of bases) {
+    const iMin = Math.ceil((minX - (offsets.ox + b[0])) / a)
+    const iMax = Math.floor((maxX - (offsets.ox + b[0])) / a)
+    const kMin = Math.ceil((minZ - (offsets.oz + b[2])) / a)
+    const kMax = Math.floor((maxZ - (offsets.oz + b[2])) / a)
+    for (let i = iMin; i <= iMax; i++) {
+      for (let k = kMin; k <= kMax; k++) {
+        const x = offsets.ox + i * a + b[0]
+        const z = offsets.oz + k * a + b[2]
+        const axisCoord = axis === 'x' ? x : z
+        const minYLocal = r + tan * (axisCoord - minAxis)
+        const jMin = Math.ceil((minYLocal - (offsets.oy + b[1])) / a)
+        const jMax = Math.floor((maxY - (offsets.oy + b[1])) / a)
+        for (let j = jMin; j <= jMax; j++) {
+          arr[idx++] = x
+          arr[idx++] = offsets.oy + j * a + b[1]
+          arr[idx++] = z
+        }
+      }
+    }
+  }
+  return arr
+}
 function sampleOffsets(period, samples = 6) {
   const arr = []
   for (let i = 0; i < samples; i++) arr.push((period * i) / samples)

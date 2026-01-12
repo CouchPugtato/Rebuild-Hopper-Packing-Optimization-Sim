@@ -11,6 +11,10 @@ export function setupUI(state, onBoxChange) {
     setupUI(state, onBoxChange)
   })
   unitsFolder.open()
+  const slopeFolder = gui.addFolder('Slope')
+  slopeFolder.add(state, 'slopeAxis', ['x', 'z']).name('Axis').onChange(onBoxChange)
+  slopeFolder.add(state, 'slopeAngleDeg', 0, 30, 1).name('Angle (deg)').onChange(onBoxChange)
+  slopeFolder.open()
   const factor = state.units === 'metric' ? 2.54 : 1
   const unitLabel = state.units === 'metric' ? 'cm' : 'in'
   const boxFolder = gui.addFolder(`Box (${unitLabel})`)

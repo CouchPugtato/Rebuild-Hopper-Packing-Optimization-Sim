@@ -1,7 +1,7 @@
 import { createScene } from './scene.js'
 import { state } from './state.js'
 import { buildBox, boundsFromDims } from './box.js'
-import { packBestFCC, packingMetrics, packFCCArray } from './packing.js'
+import { packBestFCC, packingMetrics, packFCCArray, packFCCArraySlope } from './packing.js'
 import { setupUI } from './ui.js'
 
 const app = document.getElementById('app')
@@ -62,7 +62,7 @@ function updateHUD(count, metrics) {
 function rebuildBox() {
   if (boxMesh) scene.remove(boxMesh)
   if (boxEdges) scene.remove(boxEdges)
-  const box = buildBox(scene, state.box)
+  const box = buildBox(scene, { ...state.box, slopeAngleDeg: state.slopeAngleDeg, slopeAxis: state.slopeAxis })
   boxMesh = box.mesh
   boxEdges = box.edges
   const count = state.ballsCount || 0
@@ -84,9 +84,10 @@ function packBalls() {
     activeWorkers = []
     removeCurrentGroup()
     const r = state.ballDiameter / 2
+    const slope = { slopeAxis: state.slopeAxis, slopeAngleDeg: state.slopeAngleDeg }
     const goPack = typeof window !== 'undefined' && window.pack_fcc_best_go
     let arr
-    if (goPack) {
+    if (goPack && state.slopeAngleDeg === 0) {
       console.log('Using Go WASM packer')
       arr = goPack(state.box.width, state.box.height, state.box.depth, r, state.optimizeOffsets, 6)
     } else if (state.optimizeOffsets) {
@@ -135,16 +136,16 @@ function packBalls() {
               console.warn('No best offset found; falling back to zero offset')
             }
             const bestOff = globalBest.idx !== -1 ? offsets[globalBest.idx] : { ox: 0, oy: 0, oz: 0 }
-            arr = packFCCArray(state.box, r, bestOff)
+            arr = state.slopeAngleDeg > 0 ? packFCCArraySlope(state.box, r, bestOff, slope) : packFCCArray(state.box, r, bestOff)
             finalize(arr, r, myId)
           }
         }
-        worker.postMessage({ dims: state.box, r, offsetsList: list })
+        worker.postMessage({ dims: state.box, r, offsetsList: list, slope })
       }
       return
     } else {
       console.log('Optimize offsets disabled; using zero offset')
-      arr = packFCCArray(state.box, r, { ox: 0, oy: 0, oz: 0 })
+      arr = state.slopeAngleDeg > 0 ? packFCCArraySlope(state.box, r, { ox: 0, oy: 0, oz: 0 }, slope) : packFCCArray(state.box, r, { ox: 0, oy: 0, oz: 0 })
     }
     finalize(arr, r, myId)
   }, 0)

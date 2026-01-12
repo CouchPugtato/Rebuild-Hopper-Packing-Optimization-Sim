@@ -4,5 +4,7 @@ export const state = {
   ballsGroup: null,
   optimizeOffsets: true,
   ballsCount: 0,
-  units: 'imperial'
+  units: 'imperial',
+  slopeAngleDeg: 0,
+  slopeAxis: 'x'
 }
