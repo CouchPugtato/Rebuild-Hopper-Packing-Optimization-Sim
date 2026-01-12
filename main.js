@@ -1,7 +1,7 @@
 import { createScene } from './scene.js'
 import { state } from './state.js'
 import { buildBox, boundsFromDims } from './box.js'
-import { packBestFCC, packingMetrics, packFCCArray, packFCCArraySlope } from './packing.js'
+import { packingMetrics, packFCCArray, packFCCArraySlope } from './packing.js'
 import { setupUI } from './ui.js'
 
 const app = document.getElementById('app')
@@ -14,38 +14,6 @@ let boxMesh = null
 let boxEdges = null
 let currentPackId = 0
 let activeWorkers = []
-async function fileExists(url) {
-  try {
-    const res = await fetch(url, { method: 'HEAD' })
-    return res.ok
-  } catch {
-    return false
-  }
-}
-
-async function initGoWasm() {
-  try {
-    const params = new URLSearchParams(location.search)
-    if (!params.has('go') || params.get('go') !== '1') return
-    const hasExec = await fileExists('./go/wasm_exec.js')
-    const hasWasm = await fileExists('./go/pack_go.wasm')
-    if (!hasExec || !hasWasm) return
-    await new Promise((resolve, reject) => {
-      const s = document.createElement('script')
-      s.src = './go/wasm_exec.js'
-      s.onload = () => resolve()
-      s.onerror = reject
-      document.head.appendChild(s)
-    })
-    const go = new Go()
-    const resp = await fetch('./go/pack_go.wasm')
-    const result = await WebAssembly.instantiateStreaming(resp, go.importObject)
-    go.run(result.instance)
-  } catch (e) {
-    console.warn('Go WASM init failed', e)
-  }
-}
-initGoWasm()
 
 function updateHUD(count, metrics) {
   const factor = state.units === 'metric' ? 2.54 : 1
@@ -85,12 +53,8 @@ function packBalls() {
     removeCurrentGroup()
     const r = state.ballDiameter / 2
     const slope = { slopeAxis: state.slopeAxis, slopeAngleDeg: state.slopeAngleDeg }
-    const goPack = typeof window !== 'undefined' && window.pack_fcc_best_go
     let arr
-    if (goPack && state.slopeAngleDeg === 0) {
-      console.log('Using Go WASM packer')
-      arr = goPack(state.box.width, state.box.height, state.box.depth, r, state.optimizeOffsets, 6)
-    } else if (state.optimizeOffsets) {
+    if (state.optimizeOffsets) {
       const a = 2 * Math.SQRT2 * r
       const samples = 6
       const xs = Array.from({ length: samples }, (_, i) => (a * i) / samples)
