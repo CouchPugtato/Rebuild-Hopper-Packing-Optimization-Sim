@@ -29,14 +29,19 @@ export function packFCC(dims, r, offsets = { ox: 0, oy: 0, oz: 0 }) {
     [a / 2, 0, a / 2],
     [a / 2, a / 2, 0]
   ]
-  for (let i = -100; i <= 100; i++) {
-    for (let j = -100; j <= 100; j++) {
-      for (let k = -100; k <= 100; k++) {
-        for (const b of bases) {
-          const x = offsets.ox + i * a + b[0] - 0
-          const y = offsets.oy + j * a + b[1] + 0
-          const z = offsets.oz + k * a + b[2] - 0
-          if (x < minX || x > maxX || y < minY || y > maxY || z < minZ || z > maxZ) continue
+  for (const b of bases) {
+    const iMin = Math.ceil((minX - (offsets.ox + b[0])) / a)
+    const iMax = Math.floor((maxX - (offsets.ox + b[0])) / a)
+    const jMin = Math.ceil((minY - (offsets.oy + b[1])) / a)
+    const jMax = Math.floor((maxY - (offsets.oy + b[1])) / a)
+    const kMin = Math.ceil((minZ - (offsets.oz + b[2])) / a)
+    const kMax = Math.floor((maxZ - (offsets.oz + b[2])) / a)
+    for (let i = iMin; i <= iMax; i++) {
+      for (let j = jMin; j <= jMax; j++) {
+        for (let k = kMin; k <= kMax; k++) {
+          const x = offsets.ox + i * a + b[0]
+          const y = offsets.oy + j * a + b[1]
+          const z = offsets.oz + k * a + b[2]
           positions.push({ x, y, z })
         }
       }
@@ -45,6 +50,75 @@ export function packFCC(dims, r, offsets = { ox: 0, oy: 0, oz: 0 }) {
   return positions
 }
 
+export function countFCC(dims, r, offsets = { ox: 0, oy: 0, oz: 0 }) {
+  const a = 2 * Math.SQRT2 * r
+  const W = dims.width
+  const H = dims.height
+  const D = dims.depth
+  const minX = -W / 2 + r
+  const maxX = W / 2 - r
+  const minY = r
+  const maxY = H - r
+  const minZ = -D / 2 + r
+  const maxZ = D / 2 - r
+  let count = 0
+  const bases = [
+    [0, 0, 0],
+    [0, a / 2, a / 2],
+    [a / 2, 0, a / 2],
+    [a / 2, a / 2, 0]
+  ]
+  for (const b of bases) {
+    const iMin = Math.ceil((minX - (offsets.ox + b[0])) / a)
+    const iMax = Math.floor((maxX - (offsets.ox + b[0])) / a)
+    const jMin = Math.ceil((minY - (offsets.oy + b[1])) / a)
+    const jMax = Math.floor((maxY - (offsets.oy + b[1])) / a)
+    const kMin = Math.ceil((minZ - (offsets.oz + b[2])) / a)
+    const kMax = Math.floor((maxZ - (offsets.oz + b[2])) / a)
+    count += (iMax - iMin + 1) * (jMax - jMin + 1) * (kMax - kMin + 1)
+  }
+  return count
+}
+
+export function packFCCArray(dims, r, offsets = { ox: 0, oy: 0, oz: 0 }) {
+  const a = 2 * Math.SQRT2 * r
+  const W = dims.width
+  const H = dims.height
+  const D = dims.depth
+  const minX = -W / 2 + r
+  const maxX = W / 2 - r
+  const minY = r
+  const maxY = H - r
+  const minZ = -D / 2 + r
+  const maxZ = D / 2 - r
+  const bases = [
+    [0, 0, 0],
+    [0, a / 2, a / 2],
+    [a / 2, 0, a / 2],
+    [a / 2, a / 2, 0]
+  ]
+  const total = countFCC(dims, r, offsets)
+  const arr = new Float32Array(total * 3)
+  let idx = 0
+  for (const b of bases) {
+    const iMin = Math.ceil((minX - (offsets.ox + b[0])) / a)
+    const iMax = Math.floor((maxX - (offsets.ox + b[0])) / a)
+    const jMin = Math.ceil((minY - (offsets.oy + b[1])) / a)
+    const jMax = Math.floor((maxY - (offsets.oy + b[1])) / a)
+    const kMin = Math.ceil((minZ - (offsets.oz + b[2])) / a)
+    const kMax = Math.floor((maxZ - (offsets.oz + b[2])) / a)
+    for (let i = iMin; i <= iMax; i++) {
+      for (let j = jMin; j <= jMax; j++) {
+        for (let k = kMin; k <= kMax; k++) {
+          arr[idx++] = offsets.ox + i * a + b[0]
+          arr[idx++] = offsets.oy + j * a + b[1]
+          arr[idx++] = offsets.oz + k * a + b[2]
+        }
+      }
+    }
+  }
+  return arr
+}
 function sampleOffsets(period, samples = 6) {
   const arr = []
   for (let i = 0; i < samples; i++) arr.push((period * i) / samples)
