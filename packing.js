@@ -1,62 +1,73 @@
-const SQRT3 = Math.sqrt(3)
+const CLOSE_PACKING_DENSITY = Math.PI / Math.sqrt(18)
 
-function buildALayer(W, D, r) {
-  const rows = []
-  let j = 0
-  while (true) {
-    const z = r + j * r * SQRT3
-    if (z > D - r) break
-    const xStart = r + (j % 2 ? r : 0)
-    const row = []
-    let i = 0
-    while (true) {
-      const x = xStart + i * 2 * r
-      if (x > W - r) break
-      row.push({ x, z })
-      i++
-    }
-    rows.push(row)
-    j++
-  }
-  return rows
+function inBounds(p, dims, r) {
+  return (
+    p.x >= -dims.width / 2 + r &&
+    p.x <= dims.width / 2 - r &&
+    p.y >= r &&
+    p.y <= dims.height - r &&
+    p.z >= -dims.depth / 2 + r &&
+    p.z <= dims.depth / 2 - r
+  )
 }
 
-function buildBCentroids(rows) {
-  const centroids = []
-  for (let j = 0; j < rows.length - 1; j++) {
-    const rowA = rows[j]
-    const rowB = rows[j + 1]
-    const m = Math.min(rowA.length - 1, rowB.length)
-    for (let i = 0; i < m; i++) {
-      const p0 = rowA[i]
-      const p1 = rowA[i + 1]
-      const p2 = rowB[i]
-      const cx = (p0.x + p1.x + p2.x) / 3
-      const cz = (p0.z + p1.z + p2.z) / 3
-      centroids.push({ x: cx, z: cz })
-    }
-  }
-  return centroids
-}
-
-export function packHCP(dims, r) {
+export function packFCC(dims, r, offsets = { ox: 0, oy: 0, oz: 0 }) {
+  const a = 2 * Math.SQRT2 * r
   const W = dims.width
   const H = dims.height
   const D = dims.depth
-  const rowsA = buildALayer(W, D, r)
-  const layerA = rowsA.flat()
-  const layerB = buildBCentroids(rowsA)
-  const yStep = 2 * r * Math.sqrt(2 / 3)
+  const minX = -W / 2 + r
+  const maxX = W / 2 - r
+  const minY = r
+  const maxY = H - r
+  const minZ = -D / 2 + r
+  const maxZ = D / 2 - r
   const positions = []
-  let k = 0
-  while (true) {
-    const y = r + k * yStep
-    if (y > H - r) break
-    const isA = k % 2 === 0
-    const base = isA ? layerA : layerB
-    for (const p of base) positions.push({ x: p.x - W / 2, y, z: p.z - D / 2 })
-    k++
+  const bases = [
+    [0, 0, 0],
+    [0, a / 2, a / 2],
+    [a / 2, 0, a / 2],
+    [a / 2, a / 2, 0]
+  ]
+  for (let i = -100; i <= 100; i++) {
+    for (let j = -100; j <= 100; j++) {
+      for (let k = -100; k <= 100; k++) {
+        for (const b of bases) {
+          const x = offsets.ox + i * a + b[0] - 0
+          const y = offsets.oy + j * a + b[1] + 0
+          const z = offsets.oz + k * a + b[2] - 0
+          if (x < minX || x > maxX || y < minY || y > maxY || z < minZ || z > maxZ) continue
+          positions.push({ x, y, z })
+        }
+      }
+    }
   }
   return positions
 }
 
+function sampleOffsets(period, samples = 6) {
+  const arr = []
+  for (let i = 0; i < samples; i++) arr.push((period * i) / samples)
+  return arr
+}
+
+export function packBestFCC(dims, r, optimize = true) {
+  if (!optimize) return packFCC(dims, r, { ox: 0, oy: 0, oz: 0 })
+  let best = []
+  const a = 2 * Math.SQRT2 * r
+  const xs = sampleOffsets(a)
+  const ys = sampleOffsets(a)
+  const zs = sampleOffsets(a)
+  for (const ox of xs) for (const oy of ys) for (const oz of zs) {
+    const positions = packFCC(dims, r, { ox: ox - dims.width / 2 + r, oy: oy + r, oz: oz - dims.depth / 2 + r })
+    if (positions.length > best.length) best = positions
+  }
+  return best
+}
+
+export function packingMetrics(dims, r, count) {
+  const boxVol = dims.width * dims.height * dims.depth
+  const sphereVol = (4 / 3) * Math.PI * r * r * r
+  const fraction = (count * sphereVol) / boxVol
+  return { fraction, theoreticalMax: CLOSE_PACKING_DENSITY }
+}
