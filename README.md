@@ -1,6 +1,6 @@
 # Rebuild-Hopper-Packing-Optimization-Sim
 
-A lightweight, static web app for visualizing optimized ball packing in a hopper using a FCC lattice, built for the 2026 FRC Rebuild season.
+A static web app for visualizing optimized ball packing in a hopper using a FCC lattice, built for the 2026 FRC Rebuild season and it's game pieces in mind.
 
 ## Features
 - Length, width, and heigh sliders
@@ -12,7 +12,7 @@ A lightweight, static web app for visualizing optimized ball packing in a hopper
 ## Contributing
 Contributions are welcome! Please open a pull request. Keep changes focused and include a short description of the problem or improvement, plus screenshots when relevant. Match the existing code style and keep imports and asset paths relative so the app remains deployable on GitHub Pages. If you modify packing logic (FCC or slope handling), describe the mathematical reasoning and any assumptions.
 ## Math: FCC Packing (and Slope)
-The packing routine treats sphere centers as points on an FCC lattice. If the sphere radius is $r$, the lattice spacing is $a = 2\sqrt{2}\,r$. Each cell uses four basis points,
+The packing routine treats sphere centers as points on an FCC lattice. If the sphere radius is $r$, the lattice spacing is $a = 2\sqrt{2}*rs$. Each cell uses four basis points,
 
 $$(0,0,0) , (0,\frac{a}{2},\frac{a}{2}),(\frac{a}{2},0,\frac{a}{2}),(\frac{a}{2},\frac{a}{2},0)$$
 
