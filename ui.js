@@ -1,6 +1,6 @@
 import GUI from 'https://unpkg.com/lil-gui@0.18/dist/lil-gui.esm.js'
 
-export function setupUI(state, onBoxChange) {
+export function setupUI(state, onBoxChange, onFileChange, onClear) {
   if (window.__sim_gui) window.__sim_gui.destroy()
   const gui = new GUI({ title: 'Rebuild-Hopper-Packing-Optimization-Sim' })
   window.__sim_gui = gui
@@ -8,9 +8,45 @@ export function setupUI(state, onBoxChange) {
   unitsFolder.add(state, 'units', ['imperial', 'metric']).name('Units').onChange(() => {
     onBoxChange()
     try { window.__sim_gui.destroy() } catch {}
-    setupUI(state, onBoxChange)
+    setupUI(state, onBoxChange, onFileChange, onClear)
   })
   unitsFolder.open()
+  const customFolder = gui.addFolder('Custom Box')
+  
+  const fileObj = {
+    upload: () => {
+      let input = document.getElementById('step-file-input')
+      if (!input) {
+        input = document.createElement('input')
+        input.id = 'step-file-input'
+        input.type = 'file'
+        input.accept = '.step,.stp'
+        input.style.display = 'none'
+        document.body.appendChild(input)
+        input.addEventListener('change', (e) => {
+          if (e.target.files.length > 0 && onFileChange) {
+            onFileChange(e.target.files[0])
+          }
+          input.value = ''
+        })
+      }
+      input.click()
+    },
+    clear: () => {
+      if (onClear) onClear()
+    }
+  }
+  
+  customFolder.add(state, 'importUnit', ['auto', 'mm', 'cm', 'm', 'in', 'ft']).name('File Units').onChange(() => {
+    if (state.lastUploadedFile && onFileChange) {
+      onFileChange(state.lastUploadedFile)
+    }
+  })
+  customFolder.add(fileObj, 'upload').name('Upload STEP')
+  customFolder.add(fileObj, 'clear').name('Clear Custom Model')
+  customFolder.add(state, 'packMode', ['solid', 'void']).name('Pack Mode').onChange(onBoxChange)
+  customFolder.add(state, 'flipNormals').name('Flip Normals').onChange(onBoxChange)
+  customFolder.open()
   const slopeFolder = gui.addFolder('Slope')
   slopeFolder.add(state, 'slopeAxis', ['x', 'z']).name('Axis').onChange(onBoxChange)
   slopeFolder.add(state, 'slopeAngleDeg', 0, 30, 0.01).name('Angle (deg)').onChange(onBoxChange)
@@ -42,7 +78,6 @@ export function setupUI(state, onBoxChange) {
     state.ballDiameter = v / factor
     onBoxChange()
   })
-  ballsFolder.add(state, 'optimizeOffsets').name('Optimize Offsets').onChange(onBoxChange)
   ballsFolder.open()
   return gui
 }

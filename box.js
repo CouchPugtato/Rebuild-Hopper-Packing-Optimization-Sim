@@ -12,6 +12,29 @@ export function buildBox(scene, dims) {
     } catch {}
     scene.userData.slopePlane = null
   }
+
+  if (dims.customMesh) {
+    const mesh = dims.customMesh.clone()
+    const box = new THREE.Box3().setFromObject(mesh)
+    const center = new THREE.Vector3()
+    box.getCenter(center)
+    
+    mesh.position.x = -center.x
+    mesh.position.z = -center.z
+    mesh.position.y = -box.min.y
+
+    mesh.traverse(child => {
+      if (child.isMesh) {
+        child.material = new THREE.MeshStandardMaterial({ color: 0x134e4a, transparent: true, opacity: 0.15, side: THREE.DoubleSide })
+        const edges = new THREE.LineSegments(new THREE.EdgesGeometry(child.geometry), new THREE.LineBasicMaterial({ color: 0x7dd3fc }))
+        child.add(edges)
+      }
+    })
+    
+    scene.add(mesh)
+    return { mesh, edges: null }
+  }
+
   const geo = new THREE.BoxGeometry(w, h, d)
   const mat = new THREE.MeshStandardMaterial({ color: 0x134e4a, transparent: true, opacity: 0.15, side: THREE.BackSide })
   const mesh = new THREE.Mesh(geo, mat)

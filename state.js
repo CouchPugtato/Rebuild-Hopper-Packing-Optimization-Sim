@@ -6,5 +6,11 @@ export const state = {
   ballsCount: 0,
   units: 'imperial',
   slopeAngleDeg: 0,
-  slopeAxis: 'x'
+  slopeAxis: 'x',
+  customMesh: null,
+  importUnit: 'auto',
+  fixOrientation: true,
+  lastUploadedFile: null,
+  packMode: 'solid', // 'solid' or 'void'
+  flipNormals: false
 }
